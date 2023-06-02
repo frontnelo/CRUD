@@ -1,57 +1,71 @@
-//Obtienendo los elementos de HTML
-const nombre = document.getElementById("nombre") //input
-const guardarBtn = document.getElementById("guardarBtn")
-const alumnos = document.getElementById("alumnos") //ul
+console.log("Entro al main.js");
 
-// Ejemplo de como usar onchange
-nombre.onchange = (/*event*/)=>{
-    //console.log(event)
+const nombreInput = document.getElementById("nombreInput");
+const lista = document.getElementById("lista");
+let nombres = JSON.parse(localStorage.getItem("nombres")) || [];
+let editando = false;
+let nombre_previo = "";
 
-    console.log("Input modificado: ", nombre.value)
+function agregarNombre() {
+  if (editando) {
+    nombres = nombres.map(nombreIndividual =>
+      nombreIndividual === nombre_previo ? nombreInput.value : nombreIndividual
+    );
+    localStorage.setItem("nombres", JSON.stringify(nombres));
+    nombreInput.value = "";
+    actualizarLista();
+    editando = false;
+  } else {
+    const nombre = nombreInput.value;
+    nombres.push(nombre);
+    localStorage.setItem("nombres", JSON.stringify(nombres));
+    nombreInput.value = "";
+    actualizarLista();
+  }
 }
 
-// Arreglo de alumnos. Array de objetos
-const listaAlumnos = JSON.parse(localStorage.getItem("alumnos")) || []
+function actualizarLista() {
+  lista.innerHTML = "";
+  nombres.forEach(nombre => {
+    const li = document.createElement("li");
+    li.textContent = nombre;
+    li.classList.add("list-group-item");
 
-guardarBtn.onclick = ()=>{
-    let nombreAlumno = nombre.value
-    // La estructura de objetos que seguiremos
-    let alumno = {
-        nombre: nombreAlumno,
-    }
+    const btnEliminar = document.createElement("button");
+    btnEliminar.classList.add("btn", "btn-danger", "float-right");
+    btnEliminar.innerHTML = '<i class="fa fa-trash"></i>';
+    btnEliminar.addEventListener("click", () => deleteIndividual(nombre));
+    li.appendChild(btnEliminar);
 
-    listaAlumnos.push(alumno)
+    const btnEdit = document.createElement("button");
+    btnEdit.classList.add("btn", "btn-warning", "float-right", "mr-2");
+    btnEdit.innerHTML = '<i class="fa fa-edit"></i>';
+    btnEdit.addEventListener("click", () => editar(nombre));
+    li.appendChild(btnEdit);
 
-    localStorage.setItem("alumnos", JSON.stringify(listaAlumnos))
-
-    mostrarAlumnos()
+    lista.appendChild(li);
+  });
 }
 
-
-function mostrarAlumnos(){
-    alumnos.innerHTML = "" // REiniciar lista de alumno
-
-    listaAlumnos.forEach((alumno, indice)=>{
-        console.log(alumno)
-        let li = document.createElement('li')
-
-        let p = document.createElement("p")
-        p.innerText = alumno.nombre
-
-        let deleteBtn = document.createElement("button")
-        deleteBtn.innerText = "Eliminar"
-
-        deleteBtn.onclick = ()=>{
-            listaAlumnos.splice(indice,1) // Modifica el array original
-            localStorage.setItem("alumnos", JSON.stringify(listaAlumnos))
-            mostrarAlumnos()
-        }
-
-        li.appendChild(p)
-        li.appendChild(deleteBtn)
-
-        alumnos.appendChild(li)
-    })
+function deleteIndividual(nombre) {
+  nombres = nombres.filter(n => n !== nombre);
+  localStorage.setItem("nombres", JSON.stringify(nombres));
+  actualizarLista();
 }
 
-mostrarAlumnos()
+function limpiarStorage() {
+  localStorage.clear();
+  nombres = [];
+  actualizarLista();
+}
+
+function editar(nombre) {
+  editando = true;
+  nombre_previo = nombre;
+  nombreInput.value = nombre;
+}
+
+(() => {
+  actualizarLista();
+})();
+
